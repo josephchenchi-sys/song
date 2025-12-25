@@ -112,9 +112,15 @@ function syncLoop() {
         seekBar.value = t;
         updateTimeDisplay(t, seekBar.max);
         
-        // Sync video if drifted
-        if (Math.abs(previewVideo.currentTime - t) > 0.2) {
+        // Sync video if drifted (tighten threshold to 0.05s for better sync)
+        const drift = previewVideo.currentTime - t;
+        if (Math.abs(drift) > 0.05) {
             previewVideo.currentTime = t;
+        }
+
+        // Ensure video is playing at the correct rate
+        if (previewVideo.playbackRate !== 1.0) {
+            previewVideo.playbackRate = 1.0;
         }
     }
     requestAnimationFrame(syncLoop);

@@ -2,26 +2,24 @@ import { IVideoProcessor } from './contracts/processor.js';
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 import * as ort from 'onnxruntime-web';
 import { DemucsProcessor, CONSTANTS } from 'demucs-web';
+import { SoundTouch, SimpleFilter, WebAudioBufferSource } from 'soundtouchjs';
 
-// Configure ONNX Runtime to use CDN to avoid Vite dev server issues with dynamic imports of .mjs files from public/
-// Using the same version as installed
+// Configure ONNX Runtime to use CDN
 const ORT_VERSION = '1.23.2'; 
-// Safest is to use the exact version.
 ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
 
 export class Processor extends IVideoProcessor {
   constructor() {
     super();
+    const baseURL = import.meta.env.BASE_URL;
     this.ffmpeg = createFFmpeg({ 
       log: true,
-      corePath: '/ffmpeg-core.js' 
+      corePath: `${baseURL}ffmpeg-core.js` 
     });
     this.audioContext = new AudioContext({ sampleRate: CONSTANTS.SAMPLE_RATE });
     this.demucs = new DemucsProcessor({
       ort,
-      onProgress: (info) => {
-         // This will be wired in process()
-      },
+      onProgress: (info) => {},
       onLog: (phase, msg) => console.log(`[Demucs] ${phase}: ${msg}`),
       onDownloadProgress: (loaded, total) => {
           if (this.onInitProgress) {
@@ -31,6 +29,7 @@ export class Processor extends IVideoProcessor {
     });
     this.modelLoaded = false;
     this.onInitProgress = null;
+    this.lastResult = null; // Store for offline rendering
   }
 
   async init(onProgress) {
@@ -122,6 +121,12 @@ export class Processor extends IVideoProcessor {
     const vocalsBuffer = createBuffer(vocalsData);
     const instrumentalBuffer = createBuffer(instrumentalData);
 
+    // Store for download rendering
+    this.lastResult = {
+        instrumentalRaw: instrumentalData,
+        originalVideoFile: file
+    };
+
     // 5. Encode Instrumental to WAV for FFmpeg
     const wavBytes = this.encodeWAV(instrumentalData.left, instrumentalData.right, 44100);
     this.ffmpeg.FS('writeFile', 'instrumental.wav', wavBytes);
@@ -143,14 +148,76 @@ export class Processor extends IVideoProcessor {
   }
 
   async renderDownload(settings) {
-    // For MVP, if output.mp4 exists in MEMFS, return it.
-    // Pitch shift rendering offline is not implemented yet.
-    try {
-        const data = this.ffmpeg.FS('readFile', 'output.mp4');
-        return new Blob([data.buffer], { type: 'video/mp4' });
-    } catch (e) {
-        throw new Error("Output file not found. Process video first.");
+    if (!this.lastResult) throw new Error("No processed video found.");
+
+    const { pitchShift } = settings;
+    
+    // If pitch shift is 0, we can just return the existing output.mp4 if it matches
+    if (pitchShift === 0) {
+        try {
+            const data = this.ffmpeg.FS('readFile', 'output.mp4');
+            return new Blob([data.buffer], { type: 'video/mp4' });
+        } catch (e) {
+            // If not found, fall through to re-render
+        }
     }
+
+    console.log(`Rendering download with pitch shift: ${pitchShift}`);
+    
+    // 1. Pitch shift instrumental track offline
+    const raw = this.lastResult.instrumentalRaw;
+    const shiftedData = this.applyPitchShiftOffline(raw, pitchShift);
+    
+    // 2. Encode to WAV
+    const wavBytes = this.encodeWAV(shiftedData.left, shiftedData.right, 44100);
+    this.ffmpeg.FS('writeFile', 'instrumental_shifted.wav', wavBytes);
+
+    // 3. Mux with original video
+    await this.ffmpeg.run('-i', 'input.mp4', '-i', 'instrumental_shifted.wav', '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-shortest', 'output_shifted.mp4');
+    
+    const outputData = this.ffmpeg.FS('readFile', 'output_shifted.mp4');
+    return new Blob([outputData.buffer], { type: 'video/mp4' });
+  }
+
+  applyPitchShiftOffline(data, semitones) {
+    const factor = Math.pow(2, semitones / 12);
+    const st = new SoundTouch();
+    st.pitch = factor;
+    st.tempo = 1.0;
+
+    const source = {
+        extract: (target, numFrames, offset) => {
+            for (let i = 0; i < numFrames; i++) {
+                const idx = offset + i;
+                if (idx >= data.left.length) return i;
+                target[i * 2] = data.left[idx];
+                target[i * 2 + 1] = data.right[idx];
+            }
+            return numFrames;
+        }
+    };
+
+    const filter = new SimpleFilter(source, st);
+    const outLength = Math.ceil(data.left.length); // Speed is 1.0
+    const outLeft = new Float32Array(outLength);
+    const outRight = new Float32Array(outLength);
+    
+    const bufferSize = 4096;
+    const tempBuffer = new Float32Array(bufferSize * 2);
+    let framesExtracted = 0;
+    let position = 0;
+
+    while ((framesExtracted = filter.extract(tempBuffer, bufferSize)) > 0) {
+        for (let i = 0; i < framesExtracted; i++) {
+            if (position < outLength) {
+                outLeft[position] = tempBuffer[i * 2];
+                outRight[position] = tempBuffer[i * 2 + 1];
+                position++;
+            }
+        }
+    }
+
+    return { left: outLeft, right: outRight };
   }
 
   // Simple WAV encoder (Int16)

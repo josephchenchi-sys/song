@@ -2,7 +2,8 @@ import { SoundTouch, SimpleFilter, WebAudioBufferSource } from 'soundtouchjs';
 
 export class AudioPlayer {
   constructor() {
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Force 44100Hz to match processor output and prevent pitch/speed drift
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
     this.vocalsBuffer = null;
     this.instBuffer = null;
     
@@ -39,8 +40,10 @@ export class AudioPlayer {
 
   createSoundTouchSource(buffer) {
     const soundTouch = new SoundTouch();
+    soundTouch.tempo = 1.0; // Ensure tempo is 1.0
     const source = new SimpleFilter(new WebAudioBufferSource(buffer), soundTouch);
-    soundTouch.pitch = Math.pow(2, this.pitch / 12);
+    const factor = Math.pow(2, this.pitch / 12);
+    soundTouch.pitch = factor;
     return { soundTouch, source };
   }
 
@@ -50,9 +53,8 @@ export class AudioPlayer {
     
     const bufferSize = 4096;
     
-    // Create Processors
-    this.vScript = this.ctx.createScriptProcessor(bufferSize, 2, 2);
-    this.iScript = this.ctx.createScriptProcessor(bufferSize, 2, 2);
+    // Create ONE Processor for both to ensure perfect sync
+    this.processorNode = this.ctx.createScriptProcessor(bufferSize, 2, 2);
     
     const v = this.createSoundTouchSource(this.vocalsBuffer);
     const i = this.createSoundTouchSource(this.instBuffer);
@@ -62,72 +64,70 @@ export class AudioPlayer {
     this.vST = v.soundTouch;
     this.iST = i.soundTouch;
     
-    // Seek
+    // Seek both filters to current position
     this.vFilter.sourcePosition = this.currentPosition;
     this.iFilter.sourcePosition = this.currentPosition;
 
-    // Intermediate buffers for interleaved extraction
+    // Temporary buffers for extraction
     const vSamples = new Float32Array(bufferSize * 2);
     const iSamples = new Float32Array(bufferSize * 2);
 
-    this.vScript.onaudioprocess = (e) => {
-        const l = e.outputBuffer.getChannelData(0);
-        const r = e.outputBuffer.getChannelData(1);
+    this.processorNode.onaudioprocess = (e) => {
+        const outL = e.outputBuffer.getChannelData(0);
+        const outR = e.outputBuffer.getChannelData(1);
         
-        // Extract interleaved samples (L, R, L, R...)
-        const frames = this.vFilter.extract(vSamples, bufferSize);
+        // Extract both simultaneously
+        const vFrames = this.vFilter.extract(vSamples, bufferSize);
+        const iFrames = this.iFilter.extract(iSamples, bufferSize);
         
-        // De-interleave to Web Audio API planar format
+        const frames = Math.max(vFrames, iFrames);
+
+        // Mix directly to output or use intermediate Gain nodes
+        // Since we are in script processor, we handle mixing here
+        const vGain = this.vocalsGain.gain.value;
+        const iGain = this.instGain.gain.value;
+        const mGain = this.masterGain.gain.value;
+
         for (let j = 0; j < frames; j++) {
-            l[j] = vSamples[j * 2];
-            r[j] = vSamples[j * 2 + 1];
+            // Vocals (Left/Right)
+            const vL = vSamples[j * 2] * vGain;
+            const vR = vSamples[j * 2 + 1] * vGain;
+            
+            // Instrumental (Left/Right)
+            const iL = iSamples[j * 2] * iGain;
+            const iR = iSamples[j * 2 + 1] * iGain;
+            
+            // Master Mix
+            outL[j] = (vL + iL) * mGain;
+            outR[j] = (vR + iR) * mGain;
         }
         
-        // Fill remainder with silence if end reached
+        // Fill remainder with silence
         for (let j = frames; j < bufferSize; j++) {
-            l[j] = 0;
-            r[j] = 0;
+            outL[j] = 0;
+            outR[j] = 0;
         }
 
-        // Sync position
-        if (frames > 0) this.currentPosition += frames;
+        if (frames > 0) {
+            this.currentPosition += frames;
+        } else {
+            // End of playback
+            this.pause();
+        }
     };
 
-    this.iScript.onaudioprocess = (e) => {
-        const l = e.outputBuffer.getChannelData(0);
-        const r = e.outputBuffer.getChannelData(1);
-        
-        const frames = this.iFilter.extract(iSamples, bufferSize);
-        
-        for (let j = 0; j < frames; j++) {
-            l[j] = iSamples[j * 2];
-            r[j] = iSamples[j * 2 + 1];
-        }
-        
-        for (let j = frames; j < bufferSize; j++) {
-            l[j] = 0;
-            r[j] = 0;
-        }
-    };
-
-    this.vScript.connect(this.vocalsGain);
-    this.iScript.connect(this.instGain);
-    
+    // Connect to destination
+    this.processorNode.connect(this.ctx.destination);
     this.isPlaying = true;
   }
 
   pause() {
     if (!this.isPlaying) return;
     
-    if (this.vScript) {
-        this.vScript.onaudioprocess = null;
-        this.vScript.disconnect();
-        this.vScript = null;
-    }
-    if (this.iScript) {
-        this.iScript.onaudioprocess = null;
-        this.iScript.disconnect();
-        this.iScript = null;
+    if (this.processorNode) {
+        this.processorNode.onaudioprocess = null;
+        this.processorNode.disconnect();
+        this.processorNode = null;
     }
     this.isPlaying = false;
   }
