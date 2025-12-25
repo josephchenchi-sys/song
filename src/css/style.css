@@ -1,0 +1,54 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  line-height: 1.6;
+}
+
+h1 {
+  text-align: center;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+  font-size: 16px;
+}
+
+.btn:disabled, button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.sm-btn {
+  padding: 5px 10px;
+  font-size: 14px;
+  margin: 0;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+  font-size: 16px;
+  margin-left: 10px;
+}
+
+#upload-container {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+#file-name {
+  margin-left: 10px;
+  font-style: italic;
+}
