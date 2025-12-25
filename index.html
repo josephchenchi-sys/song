@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Vocal Remover</title>
+  <link rel="stylesheet" href="/src/css/style.css">
+</head>
+<body>
+  <div id="app">
+    <h1>Video Vocal Remover</h1>
+    
+    <div id="controls">
+      <div id="upload-container">
+        <label for="file-input" class="btn">選擇影片</label>
+        <input type="file" id="file-input" accept="video/*" style="display:none">
+        <span id="file-name">未選擇檔案</span>
+      </div>
+      
+      <div id="actions">
+        <button id="process-btn" disabled>開始處理</button>
+        <button id="download-btn" disabled>下載伴奏</button>
+      </div>
+    </div>
+
+    <div id="status-container" style="margin: 20px 0;">
+      <div class="progress-wrapper" style="background: #eee; height: 20px; width: 100%; border-radius: 10px; overflow: hidden;">
+        <div id="progress-bar" style="width: 0%; height: 100%; background: #4caf50; transition: width 0.3s;"></div>
+      </div>
+      <p id="status-text">準備就緒</p>
+      <pre id="log-text" style="font-size: 12px; color: #666; max-height: 100px; overflow-y: auto; background: #f8f8f8; padding: 5px; border: 1px solid #ddd; display: none;"></pre>
+    </div>
+
+    <div id="preview-container" style="display:none; margin-top: 20px;">
+        <h3>預覽 (卡拉 OK 模式)</h3>
+        <div style="position: relative; max-width: 100%;">
+            <video id="preview-video" style="width: 100%; background: #000;" playsinline></video>
+        </div>
+        
+        <div id="playback-controls" style="margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <button id="play-pause-btn">播放</button>
+            <input type="range" id="seek-bar" value="0" min="0" step="0.1" style="flex-grow: 1;">
+            <span id="time-display">0:00 / 0:00</span>
+        </div>
+
+        <div id="karaoke-controls" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 10px;">
+                <label>
+                    <input type="checkbox" id="vocals-toggle" checked> 導唱 (人聲)
+                </label>
+                
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <span>升降 Key:</span>
+                    <button id="pitch-down-btn" class="sm-btn">-</button>
+                    <span id="pitch-display">0</span>
+                    <button id="pitch-up-btn" class="sm-btn">+</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="mobile-warning" style="display: none; background: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin-top: 20px;">
+      建議使用桌面版瀏覽器以獲得最佳效能與體驗。
+    </div>
+  </div>
+  
+  <script src="/coi-serviceworker.js"></script>
+  <script type="module" src="/src/js/app.js"></script>
+</body>
+</html>
