@@ -22,7 +22,7 @@ tests/
 : Follow standard conventions
 
 ## Recent Changes
-
+- 002-refactor-frontend-vue: Completed Vue.js refactor. All tests passed.
 - 001-video-vocal-remover: Added
 
 <!-- MANUAL ADDITIONS START -->

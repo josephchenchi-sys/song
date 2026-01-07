@@ -41,12 +41,25 @@
   - **允許 JS**: 初期在 `tsconfig.json` 中設定 `allowJs: true`，避免嚴格類型檢查阻礙進度。
   - **優先順序**: 優先為狀態介面 (State Interfaces) 和組件 Props 定義類型。複雜邏輯 (FFmpeg/Demucs 包裝器) 初期可先使用寬鬆類型 (`any`)，再逐步完善。
 
+### 5. 測試策略 (TDD)
+- **問題**: 選擇何種測試框架以配合 Vite + Vue 3？
+- **決策**: 使用 **Vitest** + **Vue Test Utils**。
+- **理由**:
+  - **Vitest**: 與 Vite 共用配置，速度極快，API 與 Jest 相容。
+  - **Vue Test Utils**: Vue 官方推薦的組件測試庫。
+  - **JSDOM**: 模擬瀏覽器環境。
+- **策略**:
+  - **Services/Composables**: 撰寫單元測試 (Unit Tests)，模擬 (Mock) WASM 依賴 (`ffmpeg`, `demucs`) 以測試狀態邏輯與錯誤處理。
+  - **Components**: 撰寫組件測試，驗證 Props, Events 與 UI 渲染狀態。
+  - **整合測試**: 由於 WASM 在 JSDOM 中難以完全運作，端對端 (E2E) 流程仍需依賴手動驗證，但核心邏輯層需達 100% 測試覆蓋。
+
 ## 技術決策
 
 | 技術 | 選擇 | 理由 |
 |------------|--------|-----------|
 | **框架** | Vue 3 (Composition API) | 使用者要求。比原生 JS 有更好的狀態管理。 |
 | **構建工具** | Vite | 現有工具，速度快，支援原生 ESM。 |
+| **測試工具** | Vitest, Vue Test Utils | 原生 Vite 整合，支援 TDD 流程。 |
 | **樣式** | Tailwind CSS | 使用者要求。Utility-first 加速開發。 |
 | **語言** | TypeScript | 使用者要求。為複雜狀態提供類型安全。 |
 | **狀態管理** | Reactivity API (`ref`/`reactive`) | 對此規模的應用已足夠。Pinia 過於複雜。 |

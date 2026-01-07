@@ -1,13 +1,14 @@
 ---
-description: "Task list for Vue.js Refactoring"
+description: "Task list for Vue.js Refactoring with TDD"
 ---
 
-# Tasks: Refactor Frontend to Vue.js
+# Tasks: Refactor Frontend to Vue.js (TDD)
 
 **輸入**: 設計文件位於 `/specs/002-refactor-frontend-vue/`
 **先決條件**: plan.md (必要), spec.md (必要), research.md, data-model.md, contracts/
 
-**組織**: 任務按階段分組，以實現從原生 JS 到 Vue.js 的漸進式遷移。
+**組織**: 任務按階段分組，嚴格遵循 TDD (Test-Driven Development) 流程。
+**TDD 規則**: 每個功能實作前**必須**先撰寫失敗的測試。
 
 ## 格式: `[ID] [P?] [Story] Description`
 
@@ -18,81 +19,86 @@ description: "Task list for Vue.js Refactoring"
 ## 路徑慣例
 
 - 根目錄: `/workspaces/song/`
-- 原始碼: `src/` (將重構為 Vue 結構)
-- 規格: `specs/002-refactor-frontend-vue/`
+- 原始碼: `src/`
+- 測試: `src/__tests__/` (Vitest 預設)
 
-## Phase 1: 基礎設施與配置 (Infrastructure & Setup)
+## Phase 1: 基礎設施與測試環境 (Infrastructure & Test Setup)
 
-**目的**: 建立 Vue 3 開發環境，整合 Tailwind CSS 與 TypeScript。
+**目的**: 建立 Vue 3 + TypeScript + Tailwind 開發環境，並配置 Vitest 測試框架。
 
-- [ ] T001 [Infra] 安裝 Vue 3, TypeScript 及相關依賴 (`npm install vue @vitejs/plugin-vue typescript vue-tsc @types/node -D`)
-- [ ] T002 [Infra] 初始化 `tsconfig.json` 並配置 TypeScript (允許 JS 漸進遷移 `allowJs: true`)
-- [ ] T003 [Infra] 安裝並配置 Tailwind CSS (`npm install -D tailwindcss postcss autoprefixer`, `npx tailwindcss init -p`)
-- [ ] T004 [Infra] 更新 `vite.config.js` 以支援 Vue 插件與 TypeScript
-- [ ] T005 [Infra] 建立 Vue 專案基本結構 (`src/App.vue`, `src/main.ts`, `src/style.css` 引入 Tailwind)
-- [ ] T006 [Infra] 修改 `index.html` 以指向新的進入點 `src/main.ts` 並移除舊的 script 標籤
-
----
-
-## Phase 2: 核心邏輯遷移 (Core Logic Migration)
-
-**目的**: 將現有的 JS 邏輯 (`processor.js`, `audio-player.js`) 封裝為 TypeScript 服務與 Vue Composables。
-
-**⚠️ 關鍵**: 確保 WASM 實例不被深層響應式代理 (Deep Proxy)。
-
-- [ ] T007 [P] [Infra] 將 `src/js/store.js` 重構為 Vue Composable `src/composables/useProcessing.ts` (定義 `ProcessingState` 與 `SourceMedia` 介面)
-- [ ] T008 [P] [Infra] 建立 `src/services/ProcessorService.ts` (從 `processor.js` 遷移，定義 `IProcessor` 介面，保持 WASM 實例私有)
-- [ ] T009 [P] [Infra] 建立 `src/services/AudioPlayerService.ts` (從 `audio-player.js` 遷移，定義播放控制介面)
-- [ ] T010 [Infra] 建立 `src/composables/useAudioPlayer.ts` 以連接 `AudioPlayerService` 並暴露響應式 `PlaybackState`
-- [ ] T011 [Infra] 確保 `ProcessorService` 與 `AudioPlayerService` 能正確處理 `SharedArrayBuffer` (驗證 `coi-serviceworker` 整合)
+- [x] T001 [Infra] 安裝 Vue 3, TypeScript 及相關依賴 (`npm install vue @vitejs/plugin-vue typescript vue-tsc @types/node -D`)
+- [x] T002 [Infra] 安裝 Vitest 與 Vue Test Utils (`npm install vitest @vue/test-utils jsdom -D`)
+- [x] T003 [Infra] 配置 `vite.config.js` 以支援 Vue, TypeScript 與 Vitest (包含 `test: { environment: 'jsdom' }`)
+- [x] T004 [Infra] 初始化 `tsconfig.json` (配置 `types: ["vitest/globals"]` 與 `allowJs: true`)
+- [x] T005 [Infra] 安裝並配置 Tailwind CSS (`npm install -D tailwindcss postcss autoprefixer`, `npx tailwindcss init -p`)
+- [x] T006 [Infra] 建立 Vue 專案基本結構 (`src/App.vue`, `src/main.ts`, `src/style.css` 引入 Tailwind)
+- [x] T007 [Infra] 修改 `index.html` 指向 `src/main.ts` 並移除舊 script，保留 `coi-serviceworker.js`
+- [x] T008 [Infra] 撰寫第一個簡單測試 `src/components/__tests__/HelloWorld.spec.ts` 驗證環境配置正確
 
 ---
 
-## Phase 3: 使用者情境 1 - 影片處理 UI (User Story 1 - Process Video)
+## Phase 2: 核心邏輯遷移 (TDD: Core Logic)
+
+**目的**: 將 JS 邏輯遷移至 TypeScript Services 與 Vue Composables。
+**測試策略**: 針對 Composables 與 Services 撰寫單元測試。Mock WASM 依賴。
+
+- [x] T009 [Infra] 建立 `src/types/index.ts` 定義 `ProcessingState`, `SourceMedia`, `IProcessor` 介面
+- [x] T010 [P] [Infra] **(Test)** 建立 `src/composables/__tests__/useProcessing.spec.ts` (測試狀態初始化與更新邏輯)
+- [x] T011 [P] [Infra] **(Impl)** 實作 `src/composables/useProcessing.ts` 直到測試通過
+- [x] T012 [P] [Infra] **(Test)** 建立 `src/services/__tests__/ProcessorService.spec.ts` (Mock `ffmpeg`/`demucs` 驗證 `process` 流程調用)
+- [x] T013 [P] [Infra] **(Impl)** 實作 `src/services/ProcessorService.ts` (遷移 `processor.js` 邏輯，保持 WASM 私有)
+- [x] T014 [P] [Infra] **(Test)** 建立 `src/services/__tests__/AudioPlayerService.spec.ts` (Mock `AudioContext` 驗證播放控制)
+- [x] T015 [P] [Infra] **(Impl)** 實作 `src/services/AudioPlayerService.ts` (遷移 `audio-player.js` 邏輯)
+- [x] T016 [Infra] **(Test)** 建立 `src/composables/__tests__/useAudioPlayer.spec.ts` (測試與 Service 的整合)
+- [x] T017 [Infra] **(Impl)** 實作 `src/composables/useAudioPlayer.ts`
+
+---
+
+## Phase 3: 使用者情境 1 - 影片處理 UI (TDD: US1)
 
 **目標**: 使用者可上傳影片，查看處理進度，並在完成後看到結果。
 
-- [ ] T012 [P] [US1] 建立 `src/components/ui/FileUpload.vue` 組件 (處理檔案拖放與選擇，驗證 MIME type)
-- [ ] T013 [P] [US1] 建立 `src/components/ui/ProgressBar.vue` 組件 (使用 Tailwind 樣式顯示進度與狀態文字)
-- [ ] T014 [US1] 在 `src/App.vue` 中整合 `FileUpload` 與 `useProcessing`，實作處理觸發邏輯 (`process()`)
-- [ ] T015 [US1] 實作 `src/components/ProcessingLog.vue` (可選) 顯示詳細日誌
-- [ ] T016 [US1] 驗證上傳 -> 處理 -> 完成 的流程在 Vue 環境下正常運作
+- [x] T018 [US1] **(Test)** 建立 `src/components/ui/__tests__/FileUpload.spec.ts` (驗證檔案選擇事件與 MIME 檢查)
+- [x] T019 [US1] **(Impl)** 實作 `src/components/ui/FileUpload.vue`
+- [x] T020 [US1] **(Test)** 建立 `src/components/ui/__tests__/ProgressBar.spec.ts` (驗證 Props 傳入進度時樣式改變)
+- [x] T021 [US1] **(Impl)** 實作 `src/components/ui/ProgressBar.vue`
+- [x] T022 [US1] **(Test)** 建立 `src/views/__tests__/ProcessView.spec.ts` (整合測試：模擬上傳觸發處理流程)
+- [x] T023 [US1] **(Impl)** 在 `src/App.vue` (或 View 組件) 中整合 `FileUpload`, `ProgressBar` 與 `useProcessing`
 
 ---
 
-## Phase 4: 使用者情境 2 - 卡拉 OK 預覽播放器 (User Story 2 - Karaoke Player)
+## Phase 4: 使用者情境 2 - 卡拉 OK 預覽播放器 (TDD: US2)
 
 **目標**: 使用者可預覽結果，切換人聲，調整 Key。
 
-- [ ] T017 [P] [US2] 建立 `src/components/player/VideoPlayer.vue` (封裝 `<video>` 元素，同步邏輯)
-- [ ] T018 [P] [US2] 建立 `src/components/player/PlayerControls.vue` (播放/暫停按鈕，進度條 `<input type="range">`)
-- [ ] T019 [P] [US2] 建立 `src/components/player/KaraokeControls.vue` (人聲切換 Toggle，升降 Key 按鈕)
-- [ ] T020 [US2] 在 `src/App.vue` (或 `src/components/KaraokePreview.vue`) 中整合播放器組件與 `useAudioPlayer`
-- [ ] T021 [US2] 實作影片與音訊的同步邏輯 (在 `useAudioPlayer` 或 `VideoPlayer.vue` 中監聽 `timeupdate`)
+- [x] T024 [P] [US2] **(Test)** 建立 `src/components/player/__tests__/PlayerControls.spec.ts` (驗證播放/暫停與 Seek 事件發送)
+- [x] T025 [P] [US2] **(Impl)** 實作 `src/components/player/PlayerControls.vue`
+- [x] T026 [P] [US2] **(Test)** 建立 `src/components/player/__tests__/KaraokeControls.spec.ts` (驗證 Toggle 與 Pitch 按鈕事件)
+- [x] T027 [P] [US2] **(Impl)** 實作 `src/components/player/KaraokeControls.vue`
+- [x] T028 [US2] **(Test)** 建立 `src/components/player/__tests__/VideoPlayer.spec.ts` (驗證 Video 元素屬性綁定)
+- [x] T029 [US2] **(Impl)** 實作 `src/components/player/VideoPlayer.vue`
+- [x] T030 [US2] **(Impl)** 整合 `src/components/KaraokePreview.vue` 連接 UI 與 `useAudioPlayer`
 
 ---
 
-## Phase 5: 使用者情境 3 - 下載功能 (User Story 3 - Download)
+## Phase 5: 使用者情境 3 - 下載功能 (TDD: US3)
 
 **目標**: 下載處理後的伴奏影片。
 
-- [ ] T022 [US3] 在 `src/components/player/DownloadSection.vue` 中實作下載按鈕
-- [ ] T023 [US3] 串接 `ProcessorService.renderDownload` 方法，並傳入當前的 Pitch Shift 設定
+- [x] T031 [US3] **(Test)** 建立 `src/components/player/__tests__/DownloadSection.spec.ts` (驗證點擊下載時調用 Service)
+- [x] T032 [US3] **(Impl)** 實作 `src/components/player/DownloadSection.vue`
+- [x] T033 [US3] **(Impl)** 更新 `src/services/ProcessorService.ts` 確保 `renderDownload` 支援新架構
 
 ---
 
-## Phase 6: 清理與優化 (Polish & Cleanup)
+## Phase 6: 清理與優化 (Polish)
 
-**目的**: 移除舊程式碼，優化 UX。
-
-- [ ] T024 [Polish] 刪除舊的 `src/js/` 目錄與 `src/css/style.css` (確認所有功能已遷移)
-- [ ] T025 [Polish] 優化 Tailwind 樣式 (RWD 適配，行動裝置視圖)
-- [ ] T026 [Polish] 加入「行動裝置警告」橫幅組件 `src/components/ui/MobileWarning.vue`
-- [ ] T027 [Polish] 執行完整測試 (上傳 -> 預覽 -> 變調 -> 下載) 確保無功能退化
+- [x] T034 [Polish] 刪除舊的 `src/js/` 目錄與 `src/css/style.css`
+- [x] T035 [Polish] **(Test)** 執行所有測試 `npm run test` 確保覆蓋率與通過率
+- [x] T036 [Polish] 加入 `src/components/ui/MobileWarning.vue` (簡單實作，可選測試)
 
 ## 依賴關係
 
-- **Phase 1** 必須最先完成。
-- **Phase 2** 必須在 UI 開發前完成 (Logic First)。
-- **Phase 3, 4, 5** 依賴 Phase 2 的 Composables。
-- **Phase 6** 最後執行。
+- **Phase 1** 為環境基礎，優先執行。
+- **Phase 2** (Logic) 必須在 **Phase 3+** (UI) 之前完成，確保 UI 有可測試的邏輯依賴。
+- 每個功能皆遵循 **Red (寫測試) -> Green (寫實作)** 循環。
