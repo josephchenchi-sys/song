@@ -23,6 +23,7 @@ export interface ProcessedResult {
     instrumental: AudioBuffer;
     vocalsBlob: Blob;
     instrumentalBlob: Blob;
+    instrumentalAudioBlob: Blob;
 }
 
 export type ProgressCallback = (stage: string, percent: number, details: string) => void;

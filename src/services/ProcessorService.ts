@@ -5,9 +5,11 @@ import { SoundTouch, SimpleFilter } from 'soundtouchjs';
 import type { IProcessor, ProcessedResult, ProgressCallback } from '../types';
 
 // Configure ONNX Runtime
-const ORT_VERSION = '1.23.2';
+// Use local WASM files from public directory
 // @ts-ignore
-ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
+const baseURL = import.meta.env.BASE_URL;
+// @ts-ignore
+ort.env.wasm.wasmPaths = `${window.location.origin}${baseURL}`;
 
 export class ProcessorService implements IProcessor {
     private static instance: ProcessorService;
@@ -17,9 +19,12 @@ export class ProcessorService implements IProcessor {
     private modelLoaded: boolean = false;
     private lastResult: {
         instrumentalRaw: { left: Float32Array; right: Float32Array };
+        vocalsRaw: { left: Float32Array; right: Float32Array };
+        originalRaw: { left: Float32Array; right: Float32Array };
         originalVideoFile: File;
     } | null = null;
     private onInitProgress: ((loaded: number, total: number) => void) | null = null;
+    private isCancelled: boolean = false;
 
     constructor() {
         console.log('[ProcessorService] Constructing...');
@@ -54,6 +59,11 @@ export class ProcessorService implements IProcessor {
         return ProcessorService.instance;
     }
 
+    public cancel() {
+        this.isCancelled = true;
+        // In a real scenario, we might want to terminate ffmpeg if running, but for now we just flag it.
+    }
+
     async init(onProgress?: (loaded: number, total: number) => void): Promise<void> {
         console.log('[ProcessorService] init() called');
         
@@ -65,7 +75,7 @@ export class ProcessorService implements IProcessor {
             }
 
             if (!this.modelLoaded) {
-                console.log('[ProcessorService] Loading Demucs model...');
+                console.log('[ProcessorService] Loading Demucs model (will use cache if available)...');
                 this.onInitProgress = onProgress || null;
                 await this.demucs.loadModel(CONSTANTS.DEFAULT_MODEL_URL);
                 this.modelLoaded = true;
@@ -78,7 +88,58 @@ export class ProcessorService implements IProcessor {
         }
     }
 
+    public async restoreSession(
+        originalVideo: Blob, 
+        instrumentalBuffer: AudioBuffer,
+        vocalsBuffer: AudioBuffer
+    ): Promise<void> {
+        console.log('[ProcessorService] Restoring session...');
+        if (!this.modelLoaded) {
+            await this.init();
+        }
+
+        const getRaw = (buffer: AudioBuffer) => {
+            return {
+                left: buffer.getChannelData(0),
+                right: buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : buffer.getChannelData(0)
+            };
+        };
+
+        const instRaw = getRaw(instrumentalBuffer);
+        const vocRaw = getRaw(vocalsBuffer);
+
+        // Mix to reconstruct original audio (approximate)
+        const len = instRaw.left.length;
+        const origLeft = new Float32Array(len);
+        const origRight = new Float32Array(len);
+        
+        // Simple mix
+        for(let i=0; i<len; i++) {
+            origLeft[i] = instRaw.left[i] + vocRaw.left[i];
+            origRight[i] = instRaw.right[i] + vocRaw.right[i];
+        }
+
+        // Restore lastResult
+        this.lastResult = {
+            instrumentalRaw: instRaw,
+            vocalsRaw: vocRaw,
+            originalRaw: { left: origLeft, right: origRight },
+            originalVideoFile: new File([originalVideo], 'restored.mp4', { type: originalVideo.type })
+        };
+
+        // Write video file to FFmpeg FS so we can mux later
+        try {
+            const data = await fetchFile(originalVideo);
+            this.ffmpeg.FS('writeFile', 'input.mp4', data);
+            console.log('[ProcessorService] Session restored, input.mp4 written.');
+        } catch (e) {
+            console.error('[ProcessorService] Failed to write input.mp4:', e);
+            throw e;
+        }
+    }
+
     async process(file: File, onProgress: ProgressCallback): Promise<ProcessedResult> {
+        this.isCancelled = false;
         console.log('[ProcessorService] process() started for:', file.name);
         if (this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
@@ -90,13 +151,17 @@ export class ProcessorService implements IProcessor {
         }
 
         try {
+            if (this.isCancelled) throw new Error('Cancelled by user');
             onProgress('extracting', 0, '正在寫入檔案到虛擬檔案系統...');
 
             // 1. Extract Audio using FFmpeg
-            this.ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
+            const isAudio = file.type.startsWith('audio/');
+            const inputName = isAudio ? 'input.mp3' : 'input.mp4'; // Use generic extension or match input
+            this.ffmpeg.FS('writeFile', inputName, await fetchFile(file));
             
             // Extract to wav (pcm_s16le)
-            await this.ffmpeg.run('-i', 'input.mp4', '-vn', '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2', 'input.wav');
+            // If it's video, -vn strips video. If it's audio, it just converts.
+            await this.ffmpeg.run('-i', inputName, '-vn', '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2', 'input.wav');
             
             const audioData = this.ffmpeg.FS('readFile', 'input.wav');
             
@@ -111,7 +176,10 @@ export class ProcessorService implements IProcessor {
                 : leftChannel;
 
             // 3. Separate Audio
+            if (this.isCancelled) throw new Error('Cancelled by user');
+            
             this.demucs.onProgress = (info: any) => {
+                 if (this.isCancelled) return; // Can't easily stop demucs but stop reporting
                  // Map 0-1 demucs progress to 10-90% overall progress
                 const p = 10 + (info.progress * 80);
                 onProgress('separating', p, `Separating... Segment ${info.currentSegment}/${info.totalSegments}`);
@@ -119,6 +187,8 @@ export class ProcessorService implements IProcessor {
 
             const result = await this.demucs.separate(leftChannel, rightChannel);
             
+            if (this.isCancelled) throw new Error('Cancelled by user');
+
             onProgress('rendering', 90, 'Mixing audio tracks...');
 
             // 4. Mix Instrumental (Bass + Drums + Other)
@@ -152,18 +222,32 @@ export class ProcessorService implements IProcessor {
             // Store for download rendering
             this.lastResult = {
                 instrumentalRaw: instrumentalData,
+                vocalsRaw: vocalsData,
+                originalRaw: { left: leftChannel, right: rightChannel },
                 originalVideoFile: file
             };
 
             // 5. Encode Instrumental to WAV for FFmpeg
             const wavBytes = this.encodeWAV(instrumentalData.left, instrumentalData.right, 44100);
             this.ffmpeg.FS('writeFile', 'instrumental.wav', wavBytes);
+            const instrumentalAudioBlob = new Blob([wavBytes.buffer], { type: 'audio/wav' });
 
-            // 6. Mux Video + Instrumental
-            await this.ffmpeg.run('-i', 'input.mp4', '-i', 'instrumental.wav', '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-shortest', 'output.mp4');
+            // 6. Mux Video + Instrumental (Only if video)
+            let outputBlob: Blob;
             
-            const outputData = this.ffmpeg.FS('readFile', 'output.mp4');
-            const outputBlob = new Blob([outputData.buffer], { type: 'video/mp4' });
+            if (isAudio) {
+                 // Just return the WAV as "instrumental blob" for now, or encode to mp3?
+                 // Let's stick to consistent logic: The 'instrumentalBlob' in result is usually the "main preview" 
+                 // Video player needs a video file or can play audio? 
+                 // Let's create an audio-only MP4 (AAC) for consistency so VideoPlayer can play it
+                 await this.ffmpeg.run('-i', 'instrumental.wav', '-c:a', 'aac', '-b:a', '192k', 'output.mp4');
+                 const outputData = this.ffmpeg.FS('readFile', 'output.mp4');
+                 outputBlob = new Blob([outputData.buffer], { type: 'audio/mp4' });
+            } else {
+                 await this.ffmpeg.run('-i', inputName, '-i', 'instrumental.wav', '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-shortest', 'output.mp4');
+                 const outputData = this.ffmpeg.FS('readFile', 'output.mp4');
+                 outputBlob = new Blob([outputData.buffer], { type: 'video/mp4' });
+            }
             
             // Also encode vocals for separate download if needed (optional but good)
             const vocalsWavBytes = this.encodeWAV(vocalsData.left, vocalsData.right, 44100);
@@ -176,7 +260,8 @@ export class ProcessorService implements IProcessor {
                 vocals: vocalsBuffer,
                 instrumental: instrumentalBuffer,
                 instrumentalBlob: outputBlob,
-                vocalsBlob: vocalsBlob
+                vocalsBlob: vocalsBlob,
+                instrumentalAudioBlob: instrumentalAudioBlob
             };
         } catch (error) {
             console.error('[ProcessorService] Process error:', error);
@@ -184,33 +269,57 @@ export class ProcessorService implements IProcessor {
         }
     }
 
-    async renderDownload(options: { pitchShift: number }): Promise<Blob> {
+    async renderDownload(options: { pitchShift: number, mode?: 'instrumental' | 'full' | 'vocals', format?: 'mp4' | 'mp3' }): Promise<Blob> {
         if (!this.lastResult) throw new Error("No processed video found.");
 
-        const { pitchShift } = options;
+        const { pitchShift, mode = 'instrumental', format = 'mp4' } = options;
+        const typeSuffix = mode;
         
-        // If pitch shift is 0, try to return cached output.mp4
-        if (pitchShift === 0) {
-            try {
-                const data = this.ffmpeg.FS('readFile', 'output.mp4');
-                return new Blob([data.buffer], { type: 'video/mp4' });
-            } catch (e) {
-                // ignore
-            }
-        }
+        console.log(`Rendering ${mode} download (format: ${format}) with pitch shift: ${pitchShift}`);
+        
+        let raw;
+        if (mode === 'full') raw = this.lastResult.originalRaw;
+        else if (mode === 'vocals') raw = this.lastResult.vocalsRaw;
+        else raw = this.lastResult.instrumentalRaw;
 
-        console.log(`Rendering download with pitch shift: ${pitchShift}`);
-        
-        const raw = this.lastResult.instrumentalRaw;
         const shiftedData = this.applyPitchShiftOffline(raw, pitchShift);
-        
         const wavBytes = this.encodeWAV(shiftedData.left, shiftedData.right, 44100);
-        this.ffmpeg.FS('writeFile', 'instrumental_shifted.wav', wavBytes);
-
-        await this.ffmpeg.run('-i', 'input.mp4', '-i', 'instrumental_shifted.wav', '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-shortest', 'output_shifted.mp4');
         
-        const outputData = this.ffmpeg.FS('readFile', 'output_shifted.mp4');
-        return new Blob([outputData.buffer], { type: 'video/mp4' });
+        // If mode is vocals and format is mp3 or wav (default vocals is wav if format not specified, but here we enforce logic)
+        // If specific format is requested, we honor it.
+        
+        const wavFilename = `temp_${typeSuffix}.wav`;
+        this.ffmpeg.FS('writeFile', wavFilename, wavBytes);
+
+        if (format === 'mp3') {
+             const mp3Filename = `output_${typeSuffix}.mp3`;
+             // Use libmp3lame for encoding
+             await this.ffmpeg.run('-i', wavFilename, '-codec:a', 'libmp3lame', '-qscale:a', '2', mp3Filename);
+             const outputData = this.ffmpeg.FS('readFile', mp3Filename);
+             return new Blob([outputData.buffer], { type: 'audio/mpeg' });
+        } else if (format === 'mp4') {
+             // Existing MP4 logic
+             const outFilename = `output_${typeSuffix}_shifted.mp4`;
+             // We need to check if the original input has a video stream.
+             // If original was audio-only, -map 0:v:0 will fail.
+             // Simple heuristic: Try to include video, if fail fallback to audio only mp4? 
+             // Or check file type stored.
+             const isAudioSource = this.lastResult.originalVideoFile.type.startsWith('audio/');
+             
+             if (isAudioSource) {
+                 // For audio source, just wrap audio in MP4 container (black screen not needed strictly, player handles it)
+                 // or just return AAC audio in M4A/MP4 container
+                 await this.ffmpeg.run('-i', wavFilename, '-c:a', 'aac', '-b:a', '192k', outFilename);
+             } else {
+                 await this.ffmpeg.run('-i', 'input.mp4', '-i', wavFilename, '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-shortest', outFilename);
+             }
+
+             const outputData = this.ffmpeg.FS('readFile', outFilename);
+             return new Blob([outputData.buffer], { type: 'video/mp4' });
+        } else {
+            // Default return WAV
+            return new Blob([wavBytes.buffer], { type: 'audio/wav' });
+        }
     }
 
     private applyPitchShiftOffline(data: { left: Float32Array, right: Float32Array }, semitones: number) {

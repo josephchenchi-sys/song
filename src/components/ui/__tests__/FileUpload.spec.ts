@@ -5,7 +5,7 @@ import FileUpload from '../FileUpload.vue';
 describe('FileUpload', () => {
     it('renders upload button', () => {
         const wrapper = mount(FileUpload);
-        expect(wrapper.text()).toContain('選擇影片');
+        expect(wrapper.text()).toContain('選擇檔案');
     });
 
     it('emits file-selected event when file is selected', async () => {

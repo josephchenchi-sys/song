@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [vue()],
   base: '/song/',
   server: {
+    host: true,
     headers: {
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Opener-Policy': 'same-origin',

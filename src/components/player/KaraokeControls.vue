@@ -9,9 +9,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'toggle-vocals', enabled: boolean): void;
   (e: 'update-pitch', delta: number): void;
+  (e: 'reset-pitch'): void;
 }>();
 
 const pitchDisplay = computed(() => {
+    if (props.pitchShift === 0) return '原調';
     return props.pitchShift > 0 ? `+${props.pitchShift}` : props.pitchShift.toString();
 });
 </script>
@@ -36,16 +38,25 @@ const pitchDisplay = computed(() => {
       <!-- Pitch Controls -->
       <div class="flex items-center gap-2">
         <span class="text-gray-700 font-medium">升降 Key:</span>
-        <div class="flex items-center bg-white rounded border border-gray-300 overflow-hidden">
+        <div class="flex items-center gap-2">
+            <div class="flex items-center bg-white rounded border border-gray-300 overflow-hidden">
+                <button 
+                @click="emit('update-pitch', -1)"
+                class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 text-lg font-bold text-gray-700"
+                >-</button>
+                <span class="w-16 text-center font-mono font-bold text-blue-600 text-sm">{{ pitchDisplay }}</span>
+                <button 
+                @click="emit('update-pitch', 1)"
+                class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 text-lg font-bold text-gray-700"
+                >+</button>
+            </div>
             <button 
-              @click="emit('update-pitch', -1)"
-              class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 text-lg font-bold text-gray-700"
-            >-</button>
-            <span class="w-10 text-center font-mono font-bold text-blue-600">{{ pitchDisplay }}</span>
-            <button 
-              @click="emit('update-pitch', 1)"
-              class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 text-lg font-bold text-gray-700"
-            >+</button>
+                v-if="pitchShift !== 0"
+                @click="emit('reset-pitch')"
+                class="text-xs text-gray-500 hover:text-blue-600 underline"
+            >
+                重置
+            </button>
         </div>
       </div>
 

@@ -41,6 +41,7 @@
     "@tailwindcss/postcss": "^4.1.18",
     "coi-serviceworker": "^0.1.7",
     "demucs-web": "^1.0.2",
+    "idb": "^8.0.3",
     "onnxruntime-web": "^1.23.2",
     "soundtouchjs": "^0.2.1"
   }

@@ -1,23 +1,23 @@
 import { reactive } from 'vue';
 import { ProcessingStatus, type SourceMedia, type ProcessedResult } from '../types';
 
-export const useProcessing = () => {
-    const state = reactive<{
-        status: ProcessingStatus;
-        progress: number;
-        error: string | null;
-        logs: string[];
-        sourceMedia: SourceMedia | null;
-        result: ProcessedResult | null;
-    }>({
-        status: ProcessingStatus.IDLE,
-        progress: 0,
-        error: null,
-        logs: [],
-        sourceMedia: null,
-        result: null
-    });
+const state = reactive<{
+    status: ProcessingStatus;
+    progress: number;
+    error: string | null;
+    logs: string[];
+    sourceMedia: SourceMedia | null;
+    result: ProcessedResult | null;
+}>({
+    status: ProcessingStatus.IDLE,
+    progress: 0,
+    error: null,
+    logs: [],
+    sourceMedia: null,
+    result: null
+});
 
+export const useProcessing = () => {
     const updateStatus = (status: ProcessingStatus, progress: number, details?: string) => {
         state.status = status;
         state.progress = progress;

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import ProcessorSection from '../ProcessorSection.vue';
 import { ProcessingStatus } from '../../../types';
@@ -52,6 +52,13 @@ vi.mock('../../../composables/useProcessing', () => ({
 }));
 
 describe('ProcessorSection', () => {
+    beforeEach(() => {
+        stateMock.status = ProcessingStatus.IDLE;
+        stateMock.sourceMedia = null;
+        stateMock.progress = 0;
+        vi.clearAllMocks();
+    });
+
     it('shows upload initially', () => {
         const wrapper = mount(ProcessorSection);
         expect(wrapper.findComponent({ name: 'FileUpload' }).exists()).toBe(true);
@@ -75,12 +82,14 @@ describe('ProcessorSection', () => {
         await wrapper.vm.$nextTick();
         
         expect(wrapper.find('button').exists()).toBe(true);
-        expect(wrapper.find('button').text()).toContain('開始處理');
+        expect(wrapper.find('button').text()).toContain('開始去人聲處理');
     });
 
     it('starts processing on button click', async () => {
         const wrapper = mount(ProcessorSection);
         stateMock.sourceMedia = { file: new File([], 't.mp4') } as any;
+        // Ensure status is IDLE explicitly after mount, as initProcessor might have changed it
+        stateMock.status = ProcessingStatus.IDLE;
         await wrapper.vm.$nextTick();
         
         await wrapper.find('button').trigger('click');
