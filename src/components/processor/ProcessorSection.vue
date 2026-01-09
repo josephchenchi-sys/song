@@ -3,10 +3,12 @@ import { computed } from 'vue';
 import FileUpload from '../ui/FileUpload.vue';
 import ProgressBar from '../ui/ProgressBar.vue';
 import { useProcessing } from '../../composables/useProcessing';
+import { useAudioPlayer } from '../../composables/useAudioPlayer';
 import { ProcessorService } from '../../services/ProcessorService';
 import { ProcessingStatus } from '../../types';
 
 const { state, setSourceMedia, updateStatus, setProcessedResult, setError, saveCurrentResult, resetState } = useProcessing();
+const { pause } = useAudioPlayer();
 const processorService = ProcessorService.getInstance();
 
 // Init processor service (load WASM)
@@ -118,7 +120,7 @@ const statusText = computed(() => {
             <p class="text-sm">已自動儲存至歷史紀錄</p>
         </div>
         <button 
-            @click="resetState"
+            @click="() => { pause(); resetState(); }"
             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition"
         >
             處理下一首

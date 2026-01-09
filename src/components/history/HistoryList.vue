@@ -1,12 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { StorageService } from '../../services/StorageService';
 import { useProcessing } from '../../composables/useProcessing';
+import { ProcessingStatus } from '../../types';
 
 const songs = ref<Array<{ id: string; name: string; timestamp: number }>>([]);
 const storageUsage = ref(0);
 const storage = StorageService.getInstance();
-const { loadFromHistory, historyVersion } = useProcessing();
+const { state, loadFromHistory, historyVersion } = useProcessing();
+
+const isProcessing = computed(() => {
+    return state.status !== ProcessingStatus.IDLE && 
+           state.status !== ProcessingStatus.COMPLETED && 
+           state.status !== ProcessingStatus.ERROR;
+});
 
 const fetchSongs = async () => {
     songs.value = await storage.getSongs();
@@ -47,13 +54,15 @@ const MAX_SONGS = 5;
         <div class="flex items-center gap-2">
             <button 
                 @click="loadFromHistory(song.id)"
-                class="load-btn text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
+                :disabled="isProcessing"
+                class="load-btn text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 disabled:opacity-30 disabled:cursor-not-allowed"
             >
                 載入
             </button>
             <button 
                 @click="deleteSong(song.id)"
-                class="text-xs text-red-500 hover:text-red-700 px-1"
+                :disabled="isProcessing"
+                class="text-xs text-red-500 hover:text-red-700 px-1 disabled:opacity-30 disabled:cursor-not-allowed"
             >
                 ✕
             </button>

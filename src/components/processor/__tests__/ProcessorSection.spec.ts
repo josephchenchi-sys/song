@@ -51,6 +51,12 @@ vi.mock('../../../composables/useProcessing', () => ({
     })
 }));
 
+vi.mock('../../../composables/useAudioPlayer', () => ({
+    useAudioPlayer: () => ({
+        pause: vi.fn()
+    })
+}));
+
 describe('ProcessorSection', () => {
     it('shows upload initially', () => {
         const wrapper = mount(ProcessorSection);

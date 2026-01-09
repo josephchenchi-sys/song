@@ -38,12 +38,16 @@ export const useAudioPlayer = () => {
 
     const togglePlay = () => {
         if (state.isPlaying) {
-            playerService.pause();
-            state.isPlaying = false;
+            pause();
         } else {
             playerService.play();
             state.isPlaying = true;
         }
+    };
+
+    const pause = () => {
+        playerService.pause();
+        state.isPlaying = false;
     };
 
     const seek = (time: number) => {
