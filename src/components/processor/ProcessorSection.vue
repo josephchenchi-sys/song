@@ -6,7 +6,7 @@ import { useProcessing } from '../../composables/useProcessing';
 import { ProcessorService } from '../../services/ProcessorService';
 import { ProcessingStatus } from '../../types';
 
-const { state, setSourceMedia, updateStatus, setProcessedResult, setError } = useProcessing();
+const { state, setSourceMedia, updateStatus, setProcessedResult, setError, saveCurrentResult, resetState } = useProcessing();
 const processorService = ProcessorService.getInstance();
 
 // Init processor service (load WASM)
@@ -41,12 +41,15 @@ const startProcessing = async () => {
             let status = ProcessingStatus.EXTRACTING_AUDIO;
             if (stage === 'separating') status = ProcessingStatus.SEPARATING;
             if (stage === 'rendering') status = ProcessingStatus.RENDERING;
-            if (stage === 'completed') status = ProcessingStatus.COMPLETED;
+            // Don't set COMPLETED here to avoid race condition with result setting
+            if (stage === 'completed') status = ProcessingStatus.RENDERING;
             
             updateStatus(status, percent, details);
         });
         
         setProcessedResult(result);
+        await saveCurrentResult();
+        updateStatus(ProcessingStatus.COMPLETED, 100, '處理完成');
     } catch (e: any) {
         setError(e.message || 'Unknown error');
     }
@@ -106,6 +109,20 @@ const statusText = computed(() => {
         <button @click="updateStatus(ProcessingStatus.IDLE, 0)" class="ml-4 underline">重試</button>
     </div>
 
-    <!-- Completion state handled by parent or different component -->
+    <div v-if="state.status === ProcessingStatus.COMPLETED" class="mt-4 text-center p-6 border-2 border-dashed border-green-200 rounded-lg bg-green-50">
+        <div class="mb-4 text-green-600">
+            <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <p class="font-bold text-lg">處理完成！</p>
+            <p class="text-sm">已自動儲存至歷史紀錄</p>
+        </div>
+        <button 
+            @click="resetState"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition"
+        >
+            處理下一首
+        </button>
+    </div>
   </div>
 </template>

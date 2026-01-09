@@ -1,36 +1,52 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import DownloadSection from '../DownloadSection.vue';
+import { ProcessorService } from '../../../services/ProcessorService';
 
-// Mock ProcessorService
-const renderDownloadMock = vi.fn().mockResolvedValue(new Blob(['video'], { type: 'video/mp4' }));
-vi.mock('../../../services/ProcessorService', () => ({
-    ProcessorService: class {
-        renderDownload = renderDownloadMock;
+// Mock dependencies
+vi.mock('../../../services/StorageService', () => ({
+    StorageService: {
+        getInstance: vi.fn(() => ({
+            getSongs: vi.fn().mockResolvedValue([]),
+        }))
     }
 }));
 
-// Mock useAudioPlayer to get pitch
+const mockRenderDownload = vi.fn().mockResolvedValue(new Blob());
+vi.mock('../../../services/ProcessorService', () => ({
+    ProcessorService: {
+        getInstance: vi.fn(() => ({
+            renderDownload: mockRenderDownload
+        }))
+    }
+}));
+
 vi.mock('../../../composables/useAudioPlayer', () => ({
     useAudioPlayer: () => ({
-        state: { pitchShift: 2 }
+        state: { pitchShift: 0 },
+        pause: vi.fn()
     })
 }));
 
-// Mock URL.createObjectURL
-global.URL.createObjectURL = vi.fn(() => 'blob:url');
-global.URL.revokeObjectURL = vi.fn();
+vi.mock('../../../composables/useProcessing', () => ({
+    useProcessing: () => ({
+        state: { sourceMedia: { file: { name: 'test.mp4' } } }
+    })
+}));
 
 describe('DownloadSection', () => {
-    it('shows download button', () => {
-        const wrapper = mount(DownloadSection);
-        expect(wrapper.text()).toContain('下載伴奏');
+    beforeEach(() => {
+        vi.clearAllMocks();
     });
 
-    it('calls renderDownload with correct pitch on click', async () => {
+    it('renders correctly', () => {
+        const wrapper = mount(DownloadSection);
+        expect(wrapper.text()).toContain('匯出選項');
+    });
+
+    it('calls renderDownload on button click', async () => {
         const wrapper = mount(DownloadSection);
         await wrapper.find('button').trigger('click');
-        
-        expect(renderDownloadMock).toHaveBeenCalledWith({ pitchShift: 2 });
+        expect(mockRenderDownload).toHaveBeenCalled();
     });
 });

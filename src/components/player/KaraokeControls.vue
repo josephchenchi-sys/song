@@ -39,14 +39,22 @@ const pitchDisplay = computed(() => {
         <div class="flex items-center bg-white rounded border border-gray-300 overflow-hidden">
             <button 
               @click="emit('update-pitch', -1)"
-              class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 text-lg font-bold text-gray-700"
+              :disabled="pitchShift <= -12"
+              class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 text-lg font-bold text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
             >-</button>
             <span class="w-10 text-center font-mono font-bold text-blue-600">{{ pitchDisplay }}</span>
             <button 
               @click="emit('update-pitch', 1)"
-              class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 text-lg font-bold text-gray-700"
+              :disabled="pitchShift >= 12"
+              class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200 text-lg font-bold text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
             >+</button>
         </div>
+        <button 
+          @click="emit('reset-pitch')"
+          :disabled="pitchShift === 0"
+          class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-600 px-2 py-1 rounded transition disabled:opacity-30"
+        >重置</button>
+        <span class="text-xs text-gray-400 ml-1">(±12)</span>
       </div>
 
     </div>

@@ -1,6 +1,26 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useProcessing } from '../useProcessing';
 import { ProcessingStatus } from '../../types';
+
+// Mock StorageService
+vi.mock('../../services/StorageService', () => ({
+    StorageService: {
+        getInstance: vi.fn(() => ({
+            saveSong: vi.fn().mockResolvedValue(undefined),
+            getSong: vi.fn().mockResolvedValue(null),
+            getSongs: vi.fn().mockResolvedValue([])
+        }))
+    }
+}));
+
+// Mock ProcessorService
+vi.mock('../../services/ProcessorService', () => ({
+    ProcessorService: {
+        getInstance: vi.fn(() => ({
+            restoreState: vi.fn()
+        }))
+    }
+}));
 
 describe('useProcessing', () => {
     it('initializes with IDLE status', () => {

@@ -66,10 +66,6 @@ const onSeek = (time: number) => {
 
 <template>
   <div class="w-full max-w-2xl mx-auto mt-8 bg-white rounded-lg shadow-md overflow-hidden">
-    <div class="p-4 border-b">
-        <h3 class="text-lg font-bold text-gray-800">預覽 (卡拉 OK 模式)</h3>
-    </div>
-    
     <VideoPlayer ref="videoPlayer" :src="videoSrc" />
     
     <div class="p-6 space-y-6">
@@ -85,7 +81,8 @@ const onSeek = (time: number) => {
             :is-vocals-enabled="playerState.isVocalsEnabled"
             :pitch-shift="playerState.pitchShift"
             @toggle-vocals="setVocals"
-            @update-pitch="setPitch"
+            @update-pitch="delta => setPitch(playerState.pitchShift + delta)"
+            @reset-pitch="setPitch(0)"
         />
         
         <DownloadSection />

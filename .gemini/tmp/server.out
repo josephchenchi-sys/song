@@ -1,0 +1,221 @@
+
+> song@1.0.0 dev
+> vite
+
+
+  VITE v7.3.0  ready in 265 ms
+
+  ➜  Local:   http://localhost:5173/song/
+  ➜  Network: http://10.0.3.119:5173/song/
+1:56:25 AM [vite] (client) hmr update /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/App.vue, /src/components/history/HistoryList.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/KaraokePreview.vue, /src/components/player/DownloadSection.vue, /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/components/history/HistoryList.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/DownloadSection.vue, /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/App.vue, /src/components/history/HistoryList.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/KaraokePreview.vue, /src/components/player/DownloadSection.vue, /src/style.css
+1:56:25 AM [vite] vite.config.js changed, restarting server...
+1:56:25 AM [vite] (client) hmr update /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/App.vue, /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/components/player/DownloadSection.vue, /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/components/player/KaraokeControls.vue, /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/components/player/KaraokePreview.vue, /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/components/processor/ProcessorSection.vue, /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/components/ui/FileUpload.vue, /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/components/history/HistoryList.vue, /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/components/processor/ProcessorSection.vue, /src/style.css
+1:56:25 AM [vite] (client) hmr update /src/style.css
+1:56:25 AM [vite] server restarted.
+
+  ➜  Local:   http://localhost:5173/song/
+  ➜  Network: use --host to expose
+2:04:00 AM [vite] (client) hmr update /src/components/processor/ProcessorSection.vue, /src/style.css
+2:04:00 AM [vite] (client) hmr update /src/style.css
+2:11:21 AM [vite] (client) hmr update /src/App.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/KaraokePreview.vue, /src/style.css
+2:11:21 AM [vite] (client) hmr update /src/style.css
+2:22:17 AM [vite] (client) hmr update /src/style.css
+2:22:17 AM [vite] (client) hmr update /src/style.css
+2:22:39 AM [vite] (client) hmr update /src/style.css
+2:22:39 AM [vite] (client) hmr update /src/style.css
+2:22:39 AM [vite] (client) hmr update /src/style.css
+2:22:50 AM [vite] (client) hmr update /src/style.css
+2:22:50 AM [vite] (client) hmr update /src/style.css
+2:23:13 AM [vite] (client) hmr update /src/style.css, /src/components/processor/ProcessorSection.vue, /src/components/player/DownloadSection.vue
+2:23:13 AM [vite] (client) hmr update /src/style.css
+2:23:31 AM [vite] (client) hmr update /src/App.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/KaraokePreview.vue, /src/style.css
+2:23:31 AM [vite] (client) hmr update /src/style.css
+2:23:48 AM [vite] (client) hmr update /src/components/processor/ProcessorSection.vue, /src/style.css
+2:23:48 AM [vite] (client) hmr update /src/style.css
+2:23:59 AM [vite] (client) hmr update /src/style.css, /src/App.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/KaraokePreview.vue
+2:23:59 AM [vite] (client) hmr update /src/style.css
+2:24:03 AM [vite] (client) hmr update /src/App.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/KaraokePreview.vue, /src/style.css
+2:24:03 AM [vite] (client) hmr update /src/style.css
+2:24:15 AM [vite] (client) hmr update /src/style.css
+2:24:15 AM [vite] (client) hmr update /src/style.css
+2:24:15 AM [vite] (client) hmr update /src/style.css
+2:24:30 AM [vite] (client) hmr update /src/App.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/KaraokePreview.vue, /src/style.css
+2:24:30 AM [vite] (client) hmr update /src/style.css
+2:24:44 AM [vite] (client) hmr update /src/style.css
+2:24:44 AM [vite] (client) hmr update /src/style.css
+2:24:44 AM [vite] (client) hmr update /src/style.css
+2:25:00 AM [vite] (client) hmr update /src/style.css
+2:25:00 AM [vite] (client) hmr update /src/style.css
+2:27:36 AM [vite] (client) hmr update /src/App.vue, /src/style.css
+2:27:36 AM [vite] (client) hmr update /src/style.css
+2:27:52 AM [vite] (client) hmr update /src/components/processor/ProcessorSection.vue, /src/style.css
+2:27:52 AM [vite] (client) hmr update /src/style.css
+2:27:58 AM [vite] (client) hmr update /src/components/player/KaraokeControls.vue, /src/style.css
+2:27:58 AM [vite] (client) hmr update /src/style.css
+2:28:11 AM [vite] (client) hmr update /src/style.css, /src/components/processor/ProcessorSection.vue, /src/components/player/DownloadSection.vue, /src/App.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue
+2:28:11 AM [vite] (client) hmr update /src/style.css
+2:28:53 AM [vite] (client) hmr update /src/style.css, /src/components/processor/ProcessorSection.vue, /src/components/player/DownloadSection.vue, /src/App.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue
+2:28:53 AM [vite] (client) hmr update /src/style.css
+2:28:58 AM [vite] (client) hmr update /src/style.css, /src/components/processor/ProcessorSection.vue, /src/components/player/DownloadSection.vue, /src/App.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue
+2:28:58 AM [vite] (client) hmr update /src/style.css
+2:29:03 AM [vite] (client) hmr update /src/components/player/KaraokePreview.vue, /src/style.css
+2:29:03 AM [vite] (client) hmr update /src/style.css
+2:29:50 AM [vite] (client) hmr update /src/components/player/DownloadSection.vue, /src/style.css
+2:29:50 AM [vite] (client) hmr update /src/style.css
+2:30:16 AM [vite] (client) hmr update /src/style.css
+2:30:16 AM [vite] (client) hmr update /src/style.css
+2:30:31 AM [vite] (client) hmr update /src/style.css
+2:30:31 AM [vite] (client) hmr update /src/style.css
+2:30:56 AM [vite] (client) hmr update /src/App.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue, /src/components/player/DownloadSection.vue, /src/style.css
+2:30:56 AM [vite] (client) hmr update /src/style.css
+2:34:15 AM [vite] (client) hmr update /src/style.css, /src/components/processor/ProcessorSection.vue, /src/components/player/DownloadSection.vue, /src/App.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue
+2:34:15 AM [vite] (client) hmr update /src/style.css
+2:35:43 AM [vite] (client) hmr update /src/style.css, /src/components/processor/ProcessorSection.vue, /src/components/player/DownloadSection.vue, /src/App.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue
+2:35:43 AM [vite] (client) hmr update /src/style.css
+2:47:17 AM [vite] (client) hmr update /src/components/player/KaraokeControls.vue, /src/style.css
+2:47:17 AM [vite] (client) hmr update /src/style.css
+2:47:22 AM [vite] (client) hmr update /src/components/player/KaraokePreview.vue, /src/style.css
+2:47:22 AM [vite] (client) hmr update /src/style.css
+2:47:35 AM [vite] (client) hmr update /src/style.css, /src/App.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue, /src/components/player/DownloadSection.vue
+2:47:35 AM [vite] (client) hmr update /src/style.css
+2:47:35 AM [vite] (client) Pre-transform error: Transform failed with 1 error:
+/workspaces/song/src/services/StorageService.ts:26:0: ERROR: Expected identifier but found "..."
+  Plugin: vite:esbuild
+  File: /workspaces/song/src/services/StorageService.ts:26:0
+  
+  Expected identifier but found "..."
+  24 |  
+  25 |  export class StorageService {
+  26 |  ...
+     |  ^
+  27 |      async deleteSong(id: string): Promise<void> {
+  28 |          const db = await this.dbPromise;
+  
+2:47:35 AM [vite] (client) Pre-transform error: Transform failed with 1 error:
+/workspaces/song/src/services/StorageService.ts:26:0: ERROR: Expected identifier but found "..."
+  Plugin: vite:esbuild
+  File: /workspaces/song/src/services/StorageService.ts:26:0
+  
+  Expected identifier but found "..."
+  24 |  
+  25 |  export class StorageService {
+  26 |  ...
+     |  ^
+  27 |      async deleteSong(id: string): Promise<void> {
+  28 |          const db = await this.dbPromise;
+  
+2:47:35 AM [vite] (client) hmr update /src/style.css
+2:47:36 AM [vite] Internal server error: Transform failed with 1 error:
+/workspaces/song/src/services/StorageService.ts:26:0: ERROR: Expected identifier but found "..."
+  Plugin: vite:esbuild
+  File: /workspaces/song/src/services/StorageService.ts:26:0
+  
+  Expected identifier but found "..."
+  24 |  
+  25 |  export class StorageService {
+  26 |  ...
+     |  ^
+  27 |      async deleteSong(id: string): Promise<void> {
+  28 |          const db = await this.dbPromise;
+  
+      at failureErrorWithLog (/workspaces/song/node_modules/esbuild/lib/main.js:1467:15)
+      at /workspaces/song/node_modules/esbuild/lib/main.js:736:50
+      at responseCallbacks.<computed> (/workspaces/song/node_modules/esbuild/lib/main.js:603:9)
+      at handleIncomingPacket (/workspaces/song/node_modules/esbuild/lib/main.js:658:12)
+      at Socket.readFromStdout (/workspaces/song/node_modules/esbuild/lib/main.js:581:7)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Readable.push (node:internal/streams/readable:390:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+2:47:36 AM [vite] (client) hmr update /src/style.css
+2:48:28 AM [vite] (client) hmr update /src/style.css, /src/App.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue, /src/components/player/DownloadSection.vue
+2:48:28 AM [vite] (client) hmr update /src/style.css
+2:48:28 AM [vite] (client) Pre-transform error: [vue/compiler-sfc] Unexpected token (21:0)
+
+/workspaces/song/src/components/history/HistoryList.vue
+18 |  };
+19 |  
+20 |  const formatDate = (ts: number) => {
+   |                                       ^
+21 |  ...
+   |  ^
+22 |      </ul>
+  Plugin: vite:vue
+  File: /workspaces/song/src/components/history/HistoryList.vue:21:0
+  18 |  };
+  19 |  
+  20 |  const formatDate = (ts: number) => {
+     |               ^
+  21 |  ...
+  22 |      </ul>
+2:48:28 AM [vite] (client) hmr update /src/style.css
+2:48:28 AM [vite] Internal server error: [vue/compiler-sfc] Unexpected token (21:0)
+
+/workspaces/song/src/components/history/HistoryList.vue
+18 |  };
+19 |  
+20 |  const formatDate = (ts: number) => {
+   |                                       ^
+21 |  ...
+   |  ^
+22 |      </ul>
+  Plugin: vite:vue
+  File: /workspaces/song/src/components/history/HistoryList.vue:21:0
+  18 |  };
+  19 |  
+  20 |  const formatDate = (ts: number) => {
+     |               ^
+  21 |  ...
+  22 |      </ul>
+      at constructor (/workspaces/song/node_modules/@babel/parser/lib/index.js:367:19)
+      at TypeScriptParserMixin.raise (/workspaces/song/node_modules/@babel/parser/lib/index.js:6624:19)
+      at TypeScriptParserMixin.unexpected (/workspaces/song/node_modules/@babel/parser/lib/index.js:6644:16)
+      at TypeScriptParserMixin.parseExprAtom (/workspaces/song/node_modules/@babel/parser/lib/index.js:11508:22)
+      at TypeScriptParserMixin.parseExprSubscripts (/workspaces/song/node_modules/@babel/parser/lib/index.js:11145:23)
+      at TypeScriptParserMixin.parseUpdate (/workspaces/song/node_modules/@babel/parser/lib/index.js:11130:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/workspaces/song/node_modules/@babel/parser/lib/index.js:11110:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/workspaces/song/node_modules/@babel/parser/lib/index.js:9890:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/workspaces/song/node_modules/@babel/parser/lib/index.js:10963:61)
+      at TypeScriptParserMixin.parseExprOps (/workspaces/song/node_modules/@babel/parser/lib/index.js:10968:23)
+2:48:28 AM [vite] (client) hmr update /src/style.css
+2:48:33 AM [vite] (client) hmr update /src/components/history/HistoryList.vue, /src/style.css
+2:48:33 AM [vite] (client) hmr update /src/style.css
+2:48:55 AM [vite] (client) hmr update /src/style.css
+2:48:55 AM [vite] (client) hmr update /src/style.css
+2:51:26 AM [vite] (client) hmr update /src/style.css, /src/App.vue, /src/components/processor/ProcessorSection.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue, /src/components/player/DownloadSection.vue
+2:51:26 AM [vite] (client) hmr update /src/style.css
+2:51:29 AM [vite] (client) hmr update /src/components/history/HistoryList.vue, /src/style.css
+2:51:29 AM [vite] (client) hmr update /src/style.css
+2:57:21 AM [vite] (client) hmr update /src/style.css, /src/components/player/KaraokePreview.vue, /src/components/player/DownloadSection.vue
+2:57:21 AM [vite] (client) hmr update /src/style.css
+2:57:27 AM [vite] (client) hmr update /src/components/player/DownloadSection.vue, /src/style.css
+2:57:27 AM [vite] (client) hmr update /src/style.css
+2:57:48 AM [vite] (client) hmr update /src/style.css
+2:57:48 AM [vite] (client) hmr update /src/style.css
+3:02:08 AM [vite] (client) hmr update /src/style.css, /src/components/processor/ProcessorSection.vue, /src/components/player/DownloadSection.vue, /src/App.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue
+3:02:08 AM [vite] (client) hmr update /src/style.css
+3:04:58 AM [vite] (client) hmr update /src/style.css, /src/components/processor/ProcessorSection.vue, /src/components/player/DownloadSection.vue, /src/App.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue
+3:04:58 AM [vite] (client) hmr update /src/style.css
+3:05:02 AM [vite] (client) hmr update /src/style.css, /src/components/player/KaraokePreview.vue, /src/components/player/DownloadSection.vue
+3:05:02 AM [vite] (client) hmr update /src/style.css
+3:05:07 AM [vite] (client) hmr update /src/components/player/DownloadSection.vue, /src/style.css
+3:05:07 AM [vite] (client) hmr update /src/style.css
+3:08:46 AM [vite] (client) hmr update /src/style.css, /src/components/processor/ProcessorSection.vue, /src/components/player/DownloadSection.vue, /src/App.vue, /src/components/player/KaraokePreview.vue, /src/components/history/HistoryList.vue
+3:08:46 AM [vite] (client) hmr update /src/style.css

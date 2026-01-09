@@ -5,9 +5,17 @@ import { SoundTouch, SimpleFilter } from 'soundtouchjs';
 import type { IProcessor, ProcessedResult, ProgressCallback } from '../types';
 
 // Configure ONNX Runtime
-const ORT_VERSION = '1.23.2';
+const baseURL = import.meta.env.BASE_URL; // 預期為 "/song/"
+const wasmPath = `${window.location.origin}${baseURL}`;
+console.log('[ProcessorService] Setting WASM paths to:', wasmPath);
+console.log('[ProcessorService] SharedArrayBuffer supported:', typeof SharedArrayBuffer !== 'undefined');
+
 // @ts-ignore
-ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ORT_VERSION}/dist/`;
+ort.env.wasm.wasmPaths = wasmPath;
+// @ts-ignore
+ort.env.wasm.numThreads = Math.min(navigator.hardwareConcurrency || 4, 8);
+// @ts-ignore
+ort.env.wasm.proxy = false; // 關閉代理模式，改用直接調用以提升穩定性
 
 export class ProcessorService implements IProcessor {
     private static instance: ProcessorService;
@@ -17,6 +25,7 @@ export class ProcessorService implements IProcessor {
     private modelLoaded: boolean = false;
     private lastResult: {
         instrumentalRaw: { left: Float32Array; right: Float32Array };
+        vocalsRaw: { left: Float32Array; right: Float32Array };
         originalVideoFile: File;
     } | null = null;
     private onInitProgress: ((loaded: number, total: number) => void) | null = null;
@@ -152,6 +161,7 @@ export class ProcessorService implements IProcessor {
             // Store for download rendering
             this.lastResult = {
                 instrumentalRaw: instrumentalData,
+                vocalsRaw: vocalsData,
                 originalVideoFile: file
             };
 
@@ -184,33 +194,96 @@ export class ProcessorService implements IProcessor {
         }
     }
 
-    async renderDownload(options: { pitchShift: number }): Promise<Blob> {
-        if (!this.lastResult) throw new Error("No processed video found.");
-
-        const { pitchShift } = options;
-        
-        // If pitch shift is 0, try to return cached output.mp4
-        if (pitchShift === 0) {
-            try {
-                const data = this.ffmpeg.FS('readFile', 'output.mp4');
-                return new Blob([data.buffer], { type: 'video/mp4' });
-            } catch (e) {
-                // ignore
-            }
+    async restoreState(originalVideo: Blob, vocalsBlob: Blob, instrumentalBlob: Blob): Promise<ProcessedResult> {
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
         }
 
-        console.log(`Rendering download with pitch shift: ${pitchShift}`);
-        
-        const raw = this.lastResult.instrumentalRaw;
-        const shiftedData = this.applyPitchShiftOffline(raw, pitchShift);
-        
-        const wavBytes = this.encodeWAV(shiftedData.left, shiftedData.right, 44100);
-        this.ffmpeg.FS('writeFile', 'instrumental_shifted.wav', wavBytes);
+        const decode = async (blob: Blob) => {
+            const arrayBuffer = await blob.arrayBuffer();
+            return await this.audioContext.decodeAudioData(arrayBuffer);
+        };
 
-        await this.ffmpeg.run('-i', 'input.mp4', '-i', 'instrumental_shifted.wav', '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-shortest', 'output_shifted.mp4');
+        const vocalsBuffer = await decode(vocalsBlob);
+        const instrumentalBuffer = await decode(instrumentalBlob);
+
+        // Reconstruct raw channels for pitch shifting
+        const getChannels = (buf: AudioBuffer) => {
+            const left = buf.getChannelData(0);
+            const right = buf.numberOfChannels > 1 ? buf.getChannelData(1) : left;
+            return { left, right };
+        };
         
-        const outputData = this.ffmpeg.FS('readFile', 'output_shifted.mp4');
-        return new Blob([outputData.buffer], { type: 'video/mp4' });
+        this.lastResult = {
+            instrumentalRaw: getChannels(instrumentalBuffer),
+            vocalsRaw: getChannels(vocalsBuffer),
+            originalVideoFile: new File([originalVideo], "restored.mp4", { type: originalVideo.type })
+        };
+
+        return {
+            originalVideo,
+            vocals: vocalsBuffer,
+            instrumental: instrumentalBuffer,
+            vocalsBlob,
+            instrumentalBlob
+        };
+    }
+
+    async renderDownload(options: { 
+        pitchShift: number, 
+        format: 'mp4' | 'mp3',
+        type: 'instrumental' | 'vocals' | 'full'
+    }): Promise<Blob> {
+        if (!this.lastResult) throw new Error("No processed data found.");
+
+        const { pitchShift, format, type } = options;
+        console.log(`[ProcessorService] renderDownload: ${format} (${type}), pitch: ${pitchShift}`);
+        
+        // Ensure input.mp4 exists in FS (needed if loading from history)
+        try {
+            this.ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(this.lastResult.originalVideoFile));
+        } catch (e) {
+            console.error('[ProcessorService] FS Write error:', e);
+        }
+
+        // 1. Prepare raw audio data
+        let audioData: { left: Float32Array, right: Float32Array };
+        
+        if (type === 'vocals') {
+            audioData = this.lastResult.vocalsRaw;
+        } else if (type === 'full') {
+            const inst = this.lastResult.instrumentalRaw;
+            const voc = this.lastResult.vocalsRaw;
+            const len = inst.left.length;
+            const mixL = new Float32Array(len);
+            const mixR = new Float32Array(len);
+            for(let i=0; i<len; i++) {
+                mixL[i] = inst.left[i] + voc.left[i];
+                mixR[i] = inst.right[i] + voc.right[i];
+            }
+            audioData = { left: mixL, right: mixR };
+        } else {
+            audioData = this.lastResult.instrumentalRaw;
+        }
+
+        // 2. Apply Pitch Shift
+        const shiftedData = this.applyPitchShiftOffline(audioData, pitchShift);
+        
+        // 3. Encode to WAV for FFmpeg
+        const wavBytes = this.encodeWAV(shiftedData.left, shiftedData.right, 44100);
+        this.ffmpeg.FS('writeFile', 'temp_audio.wav', wavBytes);
+
+        if (format === 'mp3') {
+            // Encode to MP3
+            await this.ffmpeg.run('-i', 'temp_audio.wav', '-codec:a', 'libmp3lame', '-qscale:a', '2', 'output_final.mp3');
+            const data = this.ffmpeg.FS('readFile', 'output_final.mp3');
+            return new Blob([data.buffer], { type: 'audio/mp3' });
+        } else {
+            // Mux with Video
+            await this.ffmpeg.run('-i', 'input.mp4', '-i', 'temp_audio.wav', '-c:v', 'copy', '-map', '0:v:0', '-map', '1:a:0', '-shortest', 'output_final.mp4');
+            const data = this.ffmpeg.FS('readFile', 'output_final.mp4');
+            return new Blob([data.buffer], { type: 'video/mp4' });
+        }
     }
 
     private applyPitchShiftOffline(data: { left: Float32Array, right: Float32Array }, semitones: number) {
