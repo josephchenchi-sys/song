@@ -147,7 +147,13 @@ export class ProcessorService implements IProcessor {
         
         if (!this.modelLoaded) {
             console.warn('[ProcessorService] Model not loaded, attempting lazy init...');
-            await this.init();
+            onProgress('extracting', 0, '正在載入 AI 模型 (首次執行需下載)...');
+            await this.init((loaded, total) => {
+                 if (total > 0) {
+                    const p = (loaded / total) * 100;
+                    onProgress('extracting', 0, `正在下載模型... ${(loaded/1024/1024).toFixed(1)}MB / ${(total/1024/1024).toFixed(1)}MB`);
+                 }
+            });
         }
 
         try {
@@ -165,7 +171,7 @@ export class ProcessorService implements IProcessor {
             
             const audioData = this.ffmpeg.FS('readFile', 'input.wav');
             
-            onProgress('separating', 10, 'Decoding audio...');
+            onProgress('separating', 10, '正在解碼音訊...');
 
             // 2. Decode Audio
             const audioBuffer = await this.audioContext.decodeAudioData(audioData.buffer);
@@ -182,14 +188,14 @@ export class ProcessorService implements IProcessor {
                  if (this.isCancelled) return; // Can't easily stop demucs but stop reporting
                  // Map 0-1 demucs progress to 10-90% overall progress
                 const p = 10 + (info.progress * 80);
-                onProgress('separating', p, `Separating... Segment ${info.currentSegment}/${info.totalSegments}`);
+                onProgress('separating', p, `正在分離音軌... 第 ${info.currentSegment} / ${info.totalSegments} 段`);
             };
 
             const result = await this.demucs.separate(leftChannel, rightChannel);
             
             if (this.isCancelled) throw new Error('Cancelled by user');
 
-            onProgress('rendering', 90, 'Mixing audio tracks...');
+            onProgress('rendering', 90, '正在合成音軌...');
 
             // 4. Mix Instrumental (Bass + Drums + Other)
             const mix = (tracks: any[]) => {

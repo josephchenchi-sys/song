@@ -6,6 +6,7 @@ const state = reactive<{
     progress: number;
     error: string | null;
     logs: string[];
+    currentMessage: string;
     sourceMedia: SourceMedia | null;
     result: ProcessedResult | null;
 }>({
@@ -13,6 +14,7 @@ const state = reactive<{
     progress: 0,
     error: null,
     logs: [],
+    currentMessage: '',
     sourceMedia: null,
     result: null
 });
@@ -22,7 +24,9 @@ export const useProcessing = () => {
         state.status = status;
         state.progress = progress;
         if (details) {
+            state.currentMessage = details;
             state.logs.push(details);
+            if (state.logs.length > 50) state.logs.shift(); // Limit logs
         }
     };
 

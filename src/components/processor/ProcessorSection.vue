@@ -44,6 +44,9 @@ const onFileSelected = (file: File) => {
 const startProcessing = async () => {
     if (!state.sourceMedia) return;
     
+    // 立即更新狀態，讓使用者知道系統已響應
+    updateStatus(ProcessingStatus.LOADING_MODEL, 0, '正在準備處理環境...');
+
     try {
         const result = await processorService.process(state.sourceMedia.file, (stage, percent, details) => {
             if (state.status === ProcessingStatus.IDLE) return; // Stop updates if cancelled
@@ -93,9 +96,7 @@ const isProcessing = computed(() => {
 const isCompleted = computed(() => state.status === ProcessingStatus.COMPLETED);
 const showUpload = computed(() => state.status === ProcessingStatus.IDLE || state.status === ProcessingStatus.ERROR || state.status === ProcessingStatus.LOADING_MODEL);
 
-const currentDetail = computed(() => {
-    return state.logs.length > 0 ? state.logs[state.logs.length - 1] : '';
-});
+const currentDetail = computed(() => state.currentMessage);
 
 const statusText = computed(() => {
     switch (state.status) {
@@ -143,7 +144,7 @@ const statusText = computed(() => {
             
             <ProgressBar :progress="state.progress" :status-text="''" class="h-4" />
             
-            <p v-if="currentDetail" class="text-center text-sm text-gray-400 italic h-6">
+            <p v-if="currentDetail" class="text-center text-base text-blue-600 font-medium h-6 animate-pulse">
                 {{ currentDetail }}
             </p>
 

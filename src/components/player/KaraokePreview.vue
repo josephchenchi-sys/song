@@ -30,6 +30,21 @@ const loadResources = () => {
 
 // Sync Loop
 let animationFrameId: number;
+
+const syncLoop = () => {
+    if (playerState.isPlaying && videoPlayer.value) {
+        const audioTime = playerState.currentTime;
+        const videoTime = videoPlayer.value.getTime();
+        
+        // Sync if drifted > 0.1s
+        // Video player might be slightly behind/ahead, we prefer audio as master
+        if (Math.abs(videoTime - audioTime) > 0.1) {
+            videoPlayer.value.setTime(audioTime);
+        }
+    }
+    animationFrameId = requestAnimationFrame(syncLoop);
+};
+
 // ... (skip to onMounted)
 onMounted(async () => {
     await initAudio();
